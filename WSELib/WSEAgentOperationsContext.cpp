@@ -899,4 +899,12 @@ void WSEAgentOperationsContext::OnLoad()
 	RegisterOperation("agent_ai_set_can_aim", nullptr, Both, WSE2, 2, 2,
 		"Enables or disables <0>'s ranged aiming (ballistic arc computation) for ai. When disabled, ranged agents look straight at the target instead of aiming upward.",
 		"agent_no", "value");
+
+	RegisterOperation("agent_set_can_multihit", nullptr, Both, WSE2, 2, 2,
+		"Enables or disables <0>'s  melee attacks to hit multiple enemies in a single swing, applying damage to every valid target intersecting the weapon's hitbox. Each target is hit at most once per swing. Attacks can still be blocked. If the agent is using a crush-through-block weapon, the swing will bypass blocks under the normal crush-through rules and continue past blocked defenders. Must be set on the server side in multiplayer.",
+		"agent_no", "value");
+
+	RegisterOperation("agent_has_multihit", nullptr, Both, Cf | WSE2, 1, 1,
+		"Fails if the agent has multi-hit disabled.",
+		"agent_no");
 }
