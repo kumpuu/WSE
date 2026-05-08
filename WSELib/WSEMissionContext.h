@@ -22,9 +22,13 @@ class AgentAdditionalProperties
 {
 public:
 	void Initialize();
+	static int TriggerIdToDisabledBit(int trigger_no);
+	bool IsTriggerDisabled(int trigger_no) const;
+	void SetTriggerDisabled(int trigger_no, bool value);
 
 public:
 	int footstep_sounds[5];
+	unsigned int disabled_triggers;
 };
 
 class WSEMissionContext : public WSEContext

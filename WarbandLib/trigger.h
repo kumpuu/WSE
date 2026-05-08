@@ -98,6 +98,7 @@ namespace wb
 		int timer_no;
 
 		void execute(int context);
+		bool has_trigger(int trigger_no) const;
 
 		int add_trigger(const trigger &newTrigger) { return array_add_elem(triggers, num_triggers, newTrigger); };
 		bool remove_trigger(int index) { return array_remove_elem(triggers, num_triggers, index); }

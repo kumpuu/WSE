@@ -53,3 +53,14 @@ void trigger_manager::execute(int context)
 		this->triggers[i].execute(context);
 	}
 }
+
+bool trigger_manager::has_trigger(int trigger_no) const
+{
+	for (int i = 0; i < this->num_triggers; ++i)
+	{
+		if (round_half_up(this->triggers[i].check_interval) == trigger_no)
+			return true;
+	}
+
+	return false;
+}

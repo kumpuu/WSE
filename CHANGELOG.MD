@@ -1,5 +1,8 @@
 # Changelog
 
+## v4.11.8
+- Added `agent_set_trigger_disabled`, `agent_is_trigger_disabled` operations.
+
 ## v4.11.7
 - Added `missile_remove` operation.
 - Added `ti_on_agent_footstep_sound_played` trigger.

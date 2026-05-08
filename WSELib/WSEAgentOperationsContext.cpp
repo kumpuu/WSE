@@ -626,6 +626,28 @@ void AgentSetCurrentVerticalSpeed(WSEAgentOperationsContext *context)
 	}
 }
 
+void AgentSetTriggerDisabled(WSEAgentOperationsContext *context)
+{
+	int agent_no, trigger_no;
+	bool value;
+
+	context->ExtractAgentNo(agent_no);
+	context->ExtractValue(trigger_no);
+	context->ExtractBoolean(value);
+
+	WSE->Mission.m_agent_additional_properties[agent_no].SetTriggerDisabled(trigger_no, value);
+}
+
+bool AgentIsTriggerDisabled(WSEAgentOperationsContext *context)
+{
+	int agent_no, trigger_no;
+
+	context->ExtractAgentNo(agent_no);
+	context->ExtractValue(trigger_no);
+
+	return WSE->Mission.m_agent_additional_properties[agent_no].IsTriggerDisabled(trigger_no);
+}
+
 WSEAgentOperationsContext::WSEAgentOperationsContext() : WSEOperationContext("agent", 3300, 3399)
 {
 }
@@ -907,4 +929,20 @@ void WSEAgentOperationsContext::OnLoad()
 	RegisterOperation("agent_has_multihit", nullptr, Both, Cf | WSE2, 1, 1,
 		"Fails if the agent has multi-hit disabled.",
 		"agent_no");
+
+	RegisterOperation("agent_set_crush_through", nullptr, Both, WSE2, 2, 2,
+		"Makes all <0>'s attacks function like itp_crush_through if <1> set to 1, like itp_crush_through_any_direction if <1> set to 2, else native functionality.",
+		"agent_no", "value");
+
+	RegisterOperation("agent_get_crush_through", nullptr, Both, Lhs | WSE2, 2, 2,
+		"Returns 1 if <1> is set to itp_crush_through functionality, returns 2 if set to itp_crush_through_any_direction functionality, else returns 0.",
+		"destination", "agent_no");
+
+	RegisterOperation("agent_set_trigger_disabled", AgentSetTriggerDisabled, Both, None, 3, 3,
+		"Disables (<2>=1) or enables (<2>=0) firing of <1> for <0>. Supported triggers: ti_on_agent_turn, ti_on_agent_fill_collision_capsule (WSE2), ti_on_agent_fill_movement_capsule (WSE2), ti_on_agent_footstep_sound_played.",
+		"agent_no", "trigger_id", "value");
+
+	RegisterOperation("agent_is_trigger_disabled", AgentIsTriggerDisabled, Both, Cf, 2, 2,
+		"Fails if <1> is enabled for <0>. Supported triggers: ti_on_agent_turn, ti_on_agent_fill_collision_capsule (WSE2), ti_on_agent_fill_movement_capsule (WSE2), ti_on_agent_footstep_sound_played.",
+		"agent_no", "trigger_id");
 }

@@ -926,15 +926,18 @@ void WSEMissionContext::OnAgentTurn(wb::agent *agent, float *max_rotation_speed)
 	if ((agent->action_channels[0].action_no >= 0 && agent->action_set->actions[agent->action_channels[0].action_no].flags & wb::acf_lock_rotation) || (agent->action_channels[1].action_no >= 0 && agent->action_set->actions[agent->action_channels[1].action_no].flags & wb::acf_lock_rotation))
 		*max_rotation_speed = 0.0f;
 
-	warband->basic_game.trigger_param_1 = agent->no;
-	warband->basic_game.trigger_param_2 = rglRound(*max_rotation_speed * warband->basic_game.fixed_point_multiplier);
-	
-	warband->basic_game.trigger_result = -1;
+	if (warband->mission_templates[warband->cur_mission->cur_mission_template_no].triggers.has_trigger(wb::ti_on_agent_turn) && !WSE->Mission.m_agent_additional_properties[agent->no].IsTriggerDisabled(wb::ti_on_agent_turn))
+	{
+		warband->basic_game.trigger_param_1 = agent->no;
+		warband->basic_game.trigger_param_2 = rglRound(*max_rotation_speed * warband->basic_game.fixed_point_multiplier);
 
-	warband->mission_templates[warband->cur_mission->cur_mission_template_no].triggers.execute(wb::ti_on_agent_turn);
+		warband->basic_game.trigger_result = -1;
 
-	if (warband->basic_game.trigger_result >= 0)
-		*max_rotation_speed = warband->basic_game.trigger_result / (float)warband->basic_game.fixed_point_multiplier;
+		warband->mission_templates[warband->cur_mission->cur_mission_template_no].triggers.execute(wb::ti_on_agent_turn);
+
+		if (warband->basic_game.trigger_result >= 0)
+			*max_rotation_speed = warband->basic_game.trigger_result / (float)warband->basic_game.fixed_point_multiplier;
+	}
 }
 
 void WSEMissionContext::OnAgentGetBloodParticles(wb::agent *agent)
@@ -1120,18 +1123,21 @@ void WSEMissionContext::OnAgentSetupSoundSample(wb::agent *agent, int type, bool
 		}
 	}
 
-	warband->basic_game.trigger_param_1 = agent->no;
-	warband->basic_game.trigger_param_2 = soundNo;
-	warband->basic_game.trigger_param_3 = customSound;
-	warband->basic_game.trigger_result = -2;
-	warband->mission_templates[warband->cur_mission->cur_mission_template_no].triggers.execute(wb::ti_on_agent_footstep_sound_played);
-
-	if (warband->basic_game.trigger_result >= -1)
+	if (warband->mission_templates[warband->cur_mission->cur_mission_template_no].triggers.has_trigger(wb::ti_on_agent_footstep_sound_played) && !WSE->Mission.m_agent_additional_properties[agent->no].IsTriggerDisabled(wb::ti_on_agent_footstep_sound_played))
 	{
-		soundNo = (int)warband->basic_game.trigger_result;
-		customSound = true;
-	}
+		warband->basic_game.trigger_param_1 = agent->no;
+		warband->basic_game.trigger_param_2 = soundNo;
+		warband->basic_game.trigger_param_3 = customSound;
+		warband->basic_game.trigger_result = -2;
+		warband->mission_templates[warband->cur_mission->cur_mission_template_no].triggers.execute(wb::ti_on_agent_footstep_sound_played);
 
+		if (warband->basic_game.trigger_result >= -1)
+		{
+			soundNo = (int)warband->basic_game.trigger_result;
+			customSound = true;
+		}
+	}
+	
 	if (soundNo == -1)
 		return;
 
@@ -1149,4 +1155,37 @@ void AgentAdditionalProperties::Initialize()
 	{
 		footstep_sounds[i] = -2;
 	}
+
+	disabled_triggers = 0;
+}
+
+int AgentAdditionalProperties::TriggerIdToDisabledBit(int trigger_no)
+{
+	switch (trigger_no)
+	{
+	case wb::ti_on_agent_turn:                   return 0;
+	case wb::ti_on_agent_fill_collision_capsule: return 1;
+	case wb::ti_on_agent_fill_movement_capsule:  return 2;
+	case wb::ti_on_agent_footstep_sound_played:  return 3;
+	default:                                     return -1;
+	}
+}
+
+bool AgentAdditionalProperties::IsTriggerDisabled(int trigger_no) const
+{
+	int bit = TriggerIdToDisabledBit(trigger_no);
+	return bit >= 0 && (disabled_triggers & (1u << bit)) != 0;
+}
+
+void AgentAdditionalProperties::SetTriggerDisabled(int trigger_no, bool value)
+{
+	int bit = TriggerIdToDisabledBit(trigger_no);
+
+	if (bit < 0)
+		return;
+
+	if (value)
+		disabled_triggers |= (1u << bit);
+	else
+		disabled_triggers &= ~(1u << bit);
 }
