@@ -922,12 +922,12 @@ void WSEAgentOperationsContext::OnLoad()
 		"Enables or disables <0>'s ranged aiming (ballistic arc computation) for ai. When disabled, ranged agents look straight at the target instead of aiming upward.",
 		"agent_no", "value");
 
-	RegisterOperation("agent_set_can_multihit", nullptr, Both, WSE2, 2, 2,
-		"Enables or disables <0>'s  melee attacks to hit multiple enemies in a single swing, applying damage to every valid target intersecting the weapon's hitbox. Each target is hit at most once per swing. Attacks can still be blocked. If the agent is using a crush-through-block weapon, the swing will bypass blocks under the normal crush-through rules and continue past blocked defenders. Must be set on the server side in multiplayer.",
-		"agent_no", "value");
+	RegisterOperation("agent_set_can_multihit", nullptr, Both, WSE2, 2, 3,
+		"Enables or disables <0>'s  melee attacks to hit multiple enemies in a single swing, applying damage to every valid target intersecting the weapon's hitbox. Each target is hit at most once per swing. Attacks can still be blocked. If the agent is using a crush-through-block weapon, the swing will bypass blocks under the normal crush-through rules and continue past blocked defenders. Optional <2> caps the number of distinct agents that can be damaged in a single swing (0 = unlimited, default). Must be set on the server side in multiplayer.",
+		"agent_no", "value", "max_targets");
 
 	RegisterOperation("agent_has_multihit", nullptr, Both, Cf | WSE2, 1, 1,
-		"Fails if the agent has multi-hit disabled.",
+		"Fails if the <0> has multi-hit disabled.",
 		"agent_no");
 
 	RegisterOperation("agent_set_crush_through", nullptr, Both, WSE2, 2, 2,
@@ -945,4 +945,12 @@ void WSEAgentOperationsContext::OnLoad()
 	RegisterOperation("agent_is_trigger_disabled", AgentIsTriggerDisabled, Both, Cf, 2, 2,
 		"Fails if <1> is enabled for <0>. Supported triggers: ti_on_agent_turn, ti_on_agent_fill_collision_capsule (WSE2), ti_on_agent_fill_movement_capsule (WSE2), ti_on_agent_footstep_sound_played.",
 		"agent_no", "trigger_id");
+
+	RegisterOperation("agent_set_can_piercing", nullptr, Both, WSE2, 2, 3,
+		"Enables or disables <0>'s ranged projectiles (arrows, bolts, thrown weapons) to pierce through enemies instead of stopping on the first hit. Each agent is hit at most once per projectile. Shield blocks, friendly hits, scene geometry and mission objects still stop the projectile. Optional <2> caps the number of distinct agents (including horses) that a single projectile can damage (0 = unlimited, default). Must be set on the server side in multiplayer.",
+		"agent_no", "value", "max_targets");
+
+	RegisterOperation("agent_has_piercing", nullptr, Both, Cf | WSE2, 1, 1,
+		"Fails if the <0> has piercing projectiles disabled.",
+		"agent_no");
 }
