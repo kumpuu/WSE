@@ -158,12 +158,12 @@
 			background-color: rgb(70 70 70 / 48%);
 		}
 
-		#asterix{
+		.asterix{
 			cursor: pointer;
 			color: lightsalmon;
 		}
 
-		#asterix_box{
+		.asterix_box{
 			position: absolute;
 			left: -10px;
 			top: -10px;
@@ -171,7 +171,7 @@
 			z-index: 10;
 		}
 
-		#asterix_box>div{
+		.asterix_box>div{
 			display: block;
 		}
 
@@ -582,7 +582,7 @@
 			font-size: xxx-large;
 		}
 
-		#asterix{
+		.asterix{
 			cursor: pointer;
 			color: #005500;
 		}
@@ -721,10 +721,10 @@
 				<li>No compilation needed, no python needed</li>
 				<li>
 					Hot reloading
-					<span id="asterix" class="asterix" onmousemove="document.getElementById('asterix_box').hidden=false" style="position: relative;">
+					<span class="asterix" onmousemove="this.childNodes[1].hidden=false" style="position: relative;">
 						*
-						<div id="asterix_box" onmouseleave="document.getElementById('asterix_box').hidden=true" hidden>
-							<div class="code" style="margin-left: 0; width: 35em">
+						<div class="asterix_box" onmouseleave="this.hidden=true" hidden>
+							<div class="code" style="margin-left: 0; width: 40em">
 								Lua is a dynamic scripting language, so you can execute code from disk at any time with dofile().<br>
 								A <span class="keyword">dofile("main.lua")</span> is enough to test your changes in many cases.<br>
 								It isn't equivalent to a full restart though, because the lua state will not get reset, only overwritten.
@@ -734,7 +734,22 @@
 					</span> (don't need to restart to test changes)
 				</li>
 				<li>Debugger available (lets you step through your code line by line)</li>
-				<li>Better performance</li>
+				<li>Better performance
+					<span class="asterix" onmousemove="this.childNodes[1].hidden=false" style="position: relative;">
+						*
+						<div class="asterix_box" onmouseleave="this.hidden=true" hidden>
+							<div class="code" style="margin-left: 0; width: 40em">
+								The pure lua language itself is a lot faster, but note that calling a game operation from lua is actually a bit slower,
+								because of the translation that must happen between lua and the engine.<br>
+								So replacing a modsys script line-by line with game.operation(...) statements is not faster.<br>
+								The overhead is small though, the only time you would notice it<br>
+								is when calling operations hundreds of thousands of times each frame.<br>
+								Where you can expect performance benefits is when writing computationally expensive code,<br>
+								that does not call the engine in hot loops too much, for example a pathfinding algorithm.
+							</div>
+						</div>
+					</span>
+				</li>
 				<li>Multithreading (luaLanes library)</li>
 				<li>Use any Lua code from the internet</li>
 				<li>No confusing fixed point multiplier, easy (vector) math
