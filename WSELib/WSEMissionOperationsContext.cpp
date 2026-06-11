@@ -880,7 +880,7 @@ void WSEMissionOperationsContext::OnLoad()
 
 	RegisterOperation("prop_instance_get_sound_progress", nullptr, Client, Lhs | WSE2, 2, 2,
 		"Stores <1>'s sound_progress into <0>. Returned value can be between 0-100, or -1 if nothing is being played.",
-		"destination", "scene_prop_id");
+		"destination", "prop_instance_no");
 
 	RegisterOperation("set_horse_friendly_fire", SetHorseFriendlyFire, Client, None, 1, 1,
 		"Enables or disables horse friendly fire for singleplayer",
@@ -905,4 +905,8 @@ void WSEMissionOperationsContext::OnLoad()
 	RegisterOperation("missile_remove", MissileRemove, Both, None, 1, 1,
 		"Removes <0> from the mission",
 		"missile_no");
+
+	RegisterOperation("scene_prop_remove", nullptr, Both, WSE2, 1, 1,
+		"Removes <0> from the mission (server/singleplayer authoritative; auto-synced to clients). Only works on scene props, not dropped items/missiles. The id becomes invalid and may be reused - clear it after calling. NOTE for mixed servers: vanilla Warband clients cannot clear the leftover collision and will keep an invisible hitbox; to support them, first move the prop far underground with prop_instance_set_position (a networked event vanilla understands, which relocates its hitbox) and only THEN call scene_prop_remove. Pure WSE2 servers and singleplayer do not need this",
+		"prop_instance_no");
 }
