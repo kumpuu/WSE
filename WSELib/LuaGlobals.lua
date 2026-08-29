@@ -108,10 +108,18 @@ game.mt = {
 }
 setmetatable(game, game.mt)
 
+local game_op_exclude = {
+	--These are incorrectly listed as lhs
+	prop_instance_get_position = true,
+	prop_instance_get_starting_position = true,
+	prop_instance_get_scale = true,
+	prop_instance_get_animation_target_position = true
+}
+
 game.op = {}
 if game.const and game.const.operations then
 	for k, v in pairs(game.const.operations) do
-		if not starts_with(k, "val_") then
+		if not starts_with(k, "val_") and not game_op_exclude[k] then
 			local ok, flags = pcall(game.getOperationFlags, k)
 
 			if ok and (bit.band(flags, 0x1) ~= 0) then
@@ -302,6 +310,7 @@ vector3.mt =
 		return lhs.x == rhs.x and lhs.y == rhs.y and lhs.z == rhs.z
 	end,
 }
+
 function vector3.new(obj)
 	local newObj
 	if obj then
@@ -315,6 +324,11 @@ function vector3.new(obj)
   
 	return setmetatable(newObj, vector3.mt)
 end
+
+--standard basis vector
+vector3.ex = vector3.new({x=1})
+vector3.ey = vector3.new({y=1})
+vector3.ez = vector3.new({z=1})
 
 ------------rotation------------
 game.rotation = {}
@@ -352,44 +366,67 @@ game.rotation.prototype =
 		return vector3.new({z = yaw, x = pitch, y = roll})
 	end,
 
-	rotX = function(self, angle)
-		local cos = math.cos(math.rad(angle))
-		local sin = math.sin(math.rad(angle))
+	rotX = function(self, angle, global)
+		if global then
+			self:rotate_around_axis(vector3.ex, angle)
+		else
+			local cos = math.cos(math.rad(angle))
+			local sin = math.sin(math.rad(angle))
 
-		local bOld = vector3.new(self.f)
-		local cOld = vector3.new(self.u)
+			local bOld = vector3.new(self.f)
+			local cOld = vector3.new(self.u)
 
-		self.f = cOld * sin + bOld * cos
-		self.u = cOld * cos - bOld * sin --
+			self.f = cOld * sin + bOld * cos
+			self.u = cOld * cos - bOld * sin
+		end
 	end,
 
-	rotY = function(self, angle)
-		local cos = math.cos(math.rad(angle))
-		local sin = math.sin(math.rad(angle))
+	rotY = function(self, angle, global)
+		if global then
+			self:rotate_around_axis(vector3.ey, angle)
+		else
+			local cos = math.cos(math.rad(angle))
+			local sin = math.sin(math.rad(angle))
 
-		local aOld = vector3.new(self.s)
-		local cOld = vector3.new(self.u)
+			local aOld = vector3.new(self.s)
+			local cOld = vector3.new(self.u)
 
-		self.s = aOld * cos - cOld * sin --
-		self.u = aOld * sin + cOld * cos
+			self.s = aOld * cos - cOld * sin
+			self.u = aOld * sin + cOld * cos
+		end
 	end,
 
-	rotZ = function(self, angle)
-		local cos = math.cos(math.rad(angle))
-		local sin = math.sin(math.rad(angle))
+	rotZ = function(self, angle, global)
+		if global then
+			self:rotate_around_axis(vector3.ez, angle)
+		else
+			local cos = math.cos(math.rad(angle))
+			local sin = math.sin(math.rad(angle))
 
-		local aOld = vector3.new(self.s)
-		local bOld = vector3.new(self.f)
+			local aOld = vector3.new(self.s)
+			local bOld = vector3.new(self.f)
 
-		self.s = bOld * sin + aOld * cos
-		self.f = bOld * cos - aOld * sin
+			self.s = bOld * sin + aOld * cos
+			self.f = bOld * cos - aOld * sin
+		end
 	end,
 
 	rotate = function(self, rotVec3)
 		if rotVec3.z then self:rotZ(rotVec3.z) end
 		if rotVec3.x then self:rotX(rotVec3.x) end
 		if rotVec3.y then self:rotY(rotVec3.y) end
-	end
+	end,
+
+	rotate_around_axis = function(self, axis, angle)
+		local cos = math.cos(math.rad(angle))
+		local sin = math.sin(math.rad(angle))
+		axis = axis:unit()
+
+		--Rodrigues' Rotation Formula
+		self.s = self.s*cos + axis:cross(self.s)*sin + axis*(axis:dot(self.s)*(1-cos))
+		self.f = self.f*cos + axis:cross(self.f)*sin + axis*(axis:dot(self.f)*(1-cos))
+		self.u = self.u*cos + axis:cross(self.u)*sin + axis*(axis:dot(self.u)*(1-cos))
+	end,
 }
 game.rotation.mt = 
 {
