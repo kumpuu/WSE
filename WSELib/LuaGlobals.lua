@@ -77,9 +77,9 @@ function make(_table, ...)
     local curTable = _table
 
     for i = 1, select("#", ...) do
-        local curKey = select(i, ...)
-        if not curTable[curKey] then curTable[curKey] = {} end
-        curTable = curTable[curKey]
+        local k = select(i, ...)
+        if not curTable[k] then curTable[k] = {} end
+        curTable = curTable[k]
     end
 
     return curTable
@@ -100,11 +100,41 @@ end
 
 ------------access to module operations------------
 game.mt = {
-	__index = function(table, key)
-		return function(...)
-			return game.execOperation(key,...)
+	__index = function(t, k)
+		if #k <= 6 then
+			--the vast majority of operation names are longer than 6 chars so this shouldnt slow things down much
+			--longest reg name is e.g. reg127
+			local i
+			i = string.match(k, "^reg(%d+)$")
+			if i then return game.getReg(0, tonumber(i)) end
+
+			i = string.match(k, "^s(%d+)$")
+			if i then return game.getReg(1, tonumber(i)) end
+
+			i = string.match(k, "^pos(%d+)$")
+			if i then return game.getReg(2, tonumber(i)) end
 		end
-	end
+			
+		return function(...)
+			return game.execOperation(k,...)
+		end
+	end,
+
+	__newindex = function(t, k, v)
+		if #k <= 6 then
+			local i
+			i = string.match(k, "^reg(%d+)$")
+			if i then game.setReg(0, tonumber(i), v); return end
+
+			i = string.match(k, "^s(%d+)$")
+			if i then game.setReg(1, tonumber(i), v); return end
+
+			i = string.match(k, "^pos(%d+)$")
+			if i then game.setReg(2, tonumber(i), v); return end
+		end
+
+		rawset(t, k, v)
+	end,
 }
 setmetatable(game, game.mt)
 
@@ -141,21 +171,21 @@ end
 
 ------------registers, gvar------------
 game.regMt = {
-	__index = function(table, key)
-		return game.getReg(table.typeId, key)
+	__index = function(t, k)
+		return game.getReg(t.typeId, k)
 	end,
 
-	__newindex = function(table, key, value)
-		game.setReg(table.typeId, key, value)
+	__newindex = function(t, k, v)
+		game.setReg(t.typeId, k, v)
 	end
 }
 game.gvarMt = {
-	__index = function(table, key)
-		return game.getGvar(key)
+	__index = function(t, k)
+		return game.getGvar(k)
 	end,
 
-	__newindex = function(table, key, value)
-		game.setGvar(key, value)
+	__newindex = function(t, k, v)
+		game.setGvar(k, v)
 	end
 }
 
@@ -166,10 +196,10 @@ game.gvar = setmetatable({}, game.gvarMt)
 
 ------------game constants------------
 game.const.mt = {
-	__index = function(table, key)
-		for k, v in pairs(table) do
-			if type(v) == "table" and v[key] then
-				return v[key]
+	__index = function(t, k)
+		for _, v in pairs(t) do
+			if type(v) == "table" and v[k] then
+				return v[k]
 			end
 		end
 	end
@@ -441,9 +471,9 @@ function game.rotation.new(obj)
     end
 
     local function merge(a, b)
-      for key,val in pairs(b) do
-        if not a[key] then
-          a[key] = val
+      for k,v in pairs(b) do
+        if not a[k] then
+          a[k] = v
         end
       end
 

@@ -853,27 +853,53 @@
 			<div class="content_block">
 				<div class="content_block_caption">Registers, Global Variables</div>
 				<div>
-					<p>To access registers, use <span class="keyword">game.reg[n]</span> , <span class="keyword">game.sreg[n]</span> and <span class="keyword">game.preg[n]</span></p>
+					<p>
+						To access registers, use <span class="keyword">game.reg&lt;n&gt;</span> , <span class="keyword">game.s&lt;n&gt;</span> and <span class="keyword">game.pos&lt;n&gt;</span><br>
+						Alternatively use <span class="keyword">game.reg[n]</span> , <span class="keyword">game.sreg[n]</span> and <span class="keyword">game.preg[n]</span>
+					</p>
 					<p style="padding-left: 30px;">Example:</p>
 					<pre class="code">
-						game.reg[0] = 123
-						local i = game.reg[0]
-						game.sreg[0] = "test string"
-						local s = game.sreg[0]
-						game.preg[0] = game.pos.new()
-						local pos = game.preg[0]
+						game.reg0 = 123
+						local i = game.reg0
+						game.s0 = "test string"
+						local s = game.s0
+						game.pos0 = game.pos.new()
+						local pos = game.pos0
+
+						game.sreg[0] = "abc"
+						print(game.sreg[0])
 					</pre>
 					<p>As of the current version, registers are copied by value instead of by reference. So doing things like:</p>
 					<pre class="code">
 						game.preg[0]:rotX(30)
 					</pre>
-					<p>Does not change the actual game register. This is likely going to be improved in a future version. What you have to do instead for now is:</p>
+					<p>Does not change the actual game register. What you have to do instead is:</p>
 					<pre class="code">
 						local p = game.preg[0]
 						p:rotX(30)
 						game.preg[0] = p
 					</pre>
-					<p class="border-top"><br>To access global variables, use <span class="keyword">game.gvar.gvar_name</span></p>
+
+					<p>
+						Warning for string and pos: do not use with operations that use the register as an output.<br>
+						For example, you can not do things like:
+						<pre class="code">
+							game.str_store_troop_name(game.s5, troop_id)
+						</pre>
+						<br>
+						Because the engine expects a register_no (integer). In modsys this works because s5 is literally defined as 5. But in lua, writing game.s5 will return the content (string) of s5.<br>
+						So WSE would receive that string and helpfully pass it to the engine by writing it to the last string register, and give that last register's number to the engine. The troop name would then be stored into the very last string reg instead of s5.<br>
+						The correct way of doing this is simply:
+						<pre class="code">
+							game.str_store_troop_name(5, troop_id)
+							local result = game.s5
+						</pre>
+					</p>
+					
+					<p class="border-top">
+						<br>
+						To access global variables, use <span class="keyword">game.gvar.gvar_name</span>
+					</p>
 					<pre class="code">
 						game.gvar.g_encountered_party = 123
 						print(game.gvar.g_encountered_party)
@@ -1089,12 +1115,14 @@
 
 					<p style="padding-left: 30px;">Example:</p>
 					<pre class="code">
-						local pos0 = game.preg[0]
+						local pos0 = game.pos0
 						local newRot = game.rotation.new(pos0.rot)
 						local newPos = game.pos.new({rot = newRot})
 						newPos:rotX(45)
 						newPos:rotate({x = 90, z = 180})
 						newPos:move({x = 10, z = 5})
+
+						game.agent_set_position(agent, newPos)
 					</pre>
 				</div>
 			</div>
