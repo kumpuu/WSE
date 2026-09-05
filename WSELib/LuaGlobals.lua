@@ -550,6 +550,21 @@ function game.pos.new(obj)
     local newObj
     if obj then
         newObj = tableRecursiveCopy(obj)
+
+        --user might forget to put origin components into o
+        --dont ask how i know
+        if not newObj.o then
+        	if newObj.x or newObj.y or newObj.z then
+        		newObj.o = {x = newObj.x, y = newObj.y, z = newObj.z}
+        	end
+        end
+
+        --lets do the same for rot while were here
+        if not newObj.rot then
+        	if newObj.s or newObj.f or newObj.u then
+        		newObj.rot = {s = newObj.s, f = newObj.f, u = newObj.u}
+        	end
+        end
     else
         newObj = {}
     end
