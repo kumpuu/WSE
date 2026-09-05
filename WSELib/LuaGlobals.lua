@@ -1,55 +1,77 @@
 bit = require "bit"
 
 ------------helpers------------
-function tableShallowCopy(t, copyMetatable)
+function table.copy_shallow(t, copyMetatable)
 	local t2 = {}
 	for k,v in pairs(t) do
 		t2[k] = v
 	end
 
 	if copyMetatable and getmetatable(t) then
-		setmetatable(t2, tableShallowCopy(getmetatable(t)))
+		setmetatable(t2, table.copy_shallow(getmetatable(t)))
 	end
 
 	return t2
 end
+tableShallowCopy = table.copy_shallow --legacy names, dont break user code
 
-function tableRecursiveCopy(t, copyMetatables)
+function table.copy_recursive(t, copyMetatables)
 	local t2 = {}
 	for k,v in pairs(t) do
 		if type(v) == "table" then
-			t2[k] = tableRecursiveCopy(v, copyMetatables)
+			t2[k] = table.copy_recursive(v, copyMetatables)
 		else
 			t2[k] = v
 		end
 	end
 
 	if copyMetatables and getmetatable(t) then
-		setmetatable(t2, tableRecursiveCopy(getmetatable(t), copyMetatables))
+		setmetatable(t2, table.copy_recursive(getmetatable(t), copyMetatables))
 	end
 
 	return t2
 end
+tableRecursiveCopy = table.copy_recursive
 
-function print(...)
-	local s = ""
-	for i = 1, select("#", ...) do
-		s = s .. tostring(select(i, ...)) .. "     "
-	end
-	s = s .. "\n"
-
-	_print(s)
+--Find first key that has val
+function table.find(t, val)
+    for k, v in pairs(t) do
+        if v == val then
+            return k
+        end
+    end
 end
 
-function printf(format, ...)
-    _print(string.format(format, ...))
+function table.filter(t, filter)
+    local res = {}
+
+    for k, v in pairs(t) do
+        if filter(k, v, t) then
+            res[k] = v
+        end
+    end
+
+    return res
 end
+
+function table.make(_table, ...)
+    local curTable = _table
+
+    for i = 1, select("#", ...) do
+        local curKey = select(i, ...)
+        if not curTable[curKey] then curTable[curKey] = {} end
+        curTable = curTable[curKey]
+    end
+
+    return curTable
+end
+make = table.make
 
 local function _format(v)
     if type(v) == "string" then return "'" .. v .. "'" else return tostring(v) end
 end
 
-function printTable(t, prefix, seen)
+function table.print(t, prefix, seen)
     prefix = prefix or ""
     seen = seen or {}
     seen[t] = true
@@ -72,25 +94,50 @@ function printTable(t, prefix, seen)
 
     seen[t] = nil
 end
+printTable = table.print
 
-function make(_table, ...)
-    local curTable = _table
-
-    for i = 1, select("#", ...) do
-        local k = select(i, ...)
-        if not curTable[k] then curTable[k] = {} end
-        curTable = curTable[k]
+function table.merge(target, source, recursive)
+    for k,v in pairs(source) do
+        if not target[k] then
+            target[k] = v
+        else
+            if recursive and type(v) == "table" and type(target[k]) == "table" then
+                table.merge(target[k], v, recursive)
+            end
+        end
     end
-
-    return curTable
 end
 
-function starts_with(str, start)
+function string.starts_with(str, start)
     return str:sub(1, #start) == start
 end
+starts_with = string.starts_with
  
-function ends_with(str, ending)
+function string.ends_with(str, ending)
     return ending == "" or str:sub(-#ending) == ending
+end
+ends_with = string.ends_with
+
+function string.get_matches(str, pattern)
+    local res = {}
+    for match in str:gmatch(pattern) do
+        table.insert(res, match)
+    end
+    return res
+end
+
+function print(...)
+	local s = ""
+	for i = 1, select("#", ...) do
+		s = s .. tostring(select(i, ...)) .. "     "
+	end
+	s = s .. "\n"
+
+	_print(s)
+end
+
+function printf(format, ...)
+    _print(string.format(format, ...))
 end
 
 function round(num, numDecimalPlaces)
@@ -465,7 +512,7 @@ game.rotation.mt =
 function game.rotation.new(obj)
     local newObj
     if obj then
-        newObj = tableRecursiveCopy(obj)
+        newObj = table.copy_recursive(obj)
     else
         newObj = {}
     end
@@ -549,7 +596,7 @@ game.pos.mt =
 function game.pos.new(obj)
     local newObj
     if obj then
-        newObj = tableRecursiveCopy(obj)
+        newObj = table.copy_recursive(obj)
 
         --user might forget to put origin components into o
         --dont ask how i know

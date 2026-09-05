@@ -781,7 +781,18 @@
 				<li>Create <span class="keyword">[warband_dir]\Modules\[module_name]\lua\msfiles\</span> (msfiles - "Module System files")</li>
 				<li>
 					Copy header_operations.py to your msfiles folder. This is so that WSE can translate operation names to opcodes and is neccessary for calling module system operations from lua.<br>
-					<span class="smaller_font">It's a good idea to start the game now and see if there any errors parsing this file. Delete any bad lines, but make sure any opcodes you need & the lists at the end (<span class='keyword'>lhs_operations = [...], etc</span>) are intact.</span>
+					<span class="smaller_font">It's a good idea to start the game now and see if there any errors parsing this file.
+						<span class="asterix" onmousemove="this.childNodes[1].hidden=false" style="position: relative;">
+							*
+							<div class="asterix_box" onmouseleave="this.hidden=true" hidden>
+								<div class="code" style="margin-left: 0; width: 40em">
+									If you get a lot of errors like "Warning reading file.py, line x: could not process line" or "Error reading file.py, line x could not find y", they are mostly harmless. WSE just doesn't understand all of python syntax.<br>
+									Check section "Constants" for how to hide them.
+								</div>
+							</div>
+						</span>
+					 Delete any bad lines, but make sure any opcodes you need & the lists at the end (<span class='keyword'>lhs_operations = [...], etc</span>) are intact.
+					</span>
 				</li>
 			</ul>
 			<p class="padl20">WSE/LUA uses a modified version of LuaJIT 2.1.0, which is based on and ABI compatible to Lua 5.1</p>
@@ -913,7 +924,7 @@
 				<div class="content_block_caption">Constants</div>
 				<div>
 					<p>
-						For every <span class="keyword">header_[name].py</span> or <span class="keyword">ID_[name].py</span> file you copied to your "msfiles" folder, a new table will be generated: <span class="keyword">game.const.[name]</span><br>
+						Often you need to use constants from header files in your code. For every <span class="keyword">header_[name].py</span> or <span class="keyword">ID_[name].py</span> file you copied to your "msfiles" folder, a new table will be generated: <span class="keyword">game.const.[name]</span><br>
 						This table will be filled with all the constants from that file.<br>
 						If there are two files with the same <span class="keyword">[name]</span>, e.g. header_scenes and ID_scenes, the tables will get merged.</p>
 					<p>As of the current version, only lines that match one of the two following regexes (regular expressions) will be accepted:</p>
@@ -921,9 +932,14 @@
 						^(\w+)=(((-)?0x[\da-fA-F]+)|((-)?\d+(\.\d+)?))$
 						^(\w+)=(\w+)$
 					</pre>
-					<p>This probably looks intimidating to you, but really all it says is that your constant must either be a number, a hex number, or another constant (from the same file, currently).</p>
+					<p>Really all it says is that your constant must either be a number, a hex number, or another constant (from the same file, currently).</p>
 					<p>In other words: <span class="keyword">constant = num|hexNum|otherConstant</span>
-					<p>If the match fails, the line will be ignored. To display a warning in this case, set <span class="keyword">[lua] disable_game_const_warnings = 0</span> in wse_settings.ini.</p>
+					<p class="border-top"></p>
+					<p>If the match fails, the line will be ignored and it might trigger a warning.<br>
+						These warnings should be hidden by default, if not you can hide them by setting <span class="keyword">[lua] disable_game_const_warnings = 1</span> in wse_settings.ini.<br>
+						For WSE2 it's <span class="keyword">[General] bLuaDisableGameConstWarnings=true</span> in "Documents\Mount&Blade Warband WSE2\rgl_config.ini". For WSE2 dedicated server it's server_config.ini.
+					</p>
+					<p class="border-top"></p>
 					<p><br>You can omit the <span class="keyword">[name]</span> part in <span class="keyword">game.const.[name].[constant]</span>, in which case all tables in <span class="keyword">game.const</span> will be searched for your constant and the first result will be used.</p>
 					<p>So let's say you want to add a deathmatch trigger for <span class="keyword">ti_on_agent_hit</span>. Instead of this:</p>
 					<pre class="code">
@@ -1046,9 +1062,11 @@
 			<div class="content_block">
 				<div class="content_block_caption">Positions</div>
 				<div>
-					<p>To work with positions, the following "classes" are provided: <span class="keyword">game.rotation, game.pos and vector3</span> (see under miscellaneous)</p>
-					<p>Keep in mind that these don't need the fixed point multiplier that the module system requires you to use.</p>
-					<p>The MS multiplier is essentially a way of specifying the current unit of length.</p>
+					<p>
+						To work with positions, the following "classes" are provided: <span class="keyword">game.rotation, game.pos and vector3</span> (see under miscellaneous)<br>
+						These don't need the fixed point multiplier that the module system requires you to use.<br>
+						The MS multiplier is essentially a way of specifying the current unit of length.
+					</p>
 					<pre class="code" ms>
 						set_fixed_point_multiplier(1),
 						position_get_x(":x", 0), <span class="comment">#get pos0_x in meters</span>
@@ -1075,10 +1093,11 @@
 										f = vector3.new({y = 1}) <span class="comment">--forwards/y axis</span>
 										u = vector3.new({z = 1})  <span class="comment">--up/z axis</span>
 										function getRot(self) <span class="comment">--returns vector3.new({z = yaw, x = pitch, y = roll})</span>
-										function rotX(self, angle) <span class="comment">--rotate around x axis, angle in degrees</span>
-										function rotY(self, angle) <span class="comment">--rotate around y axis, angle in degrees</span>
-										function rotZ(self, angle) <span class="comment">--rotate around z axis, angle in degrees</span>
+										function rotX(self, angle, [global]) <span class="comment">--rotate around local x axis, angle in degrees. If global!=nil use global x axis</span>
+										function rotY(self, angle, [global]) <span class="comment">--rotate around local y axis, angle in degrees. If global!=nil use global y axis</span>
+										function rotZ(self, angle, [global]) <span class="comment">--rotate around local z axis, angle in degrees. If global!=nil use global z axis</span>
 										function rotate(self, rotVec3) <span class="comment">--rotate around all axis, zxy order, angle in degrees</span>
+										function rotate_around_axis(self, axis, angle) <span class="comment">--rotate around arbitrary axis (vector3), angle in degrees</span>
 									</pre>
 								</li>
 							</ul>
@@ -1414,9 +1433,7 @@
 				<div class="content_block_caption">Globals</div>
 				<div>
 					<ul class="padli">
-						<li><span class="keyword">tableShallowCopy(t, copyMetatable)</span> - returns a copy of table t, however any object items will still reference the same object. If copyMetatable ~= nil, the returned table will have the same metatable as t, as given by getmetatable(t).</li>
-						<li><span class="keyword">tableRecursiveCopy(t, copyMetatable)</span> - returns a copy of table t. All table items in t and further down the "tree" will be actual copies by value instead of by reference. If copyMetatable ~= nil, all metatables will be copied (by value), as given by getmetatable(t).</li>
-						<li>vector3 - class for storing and manipulating 3D vectors
+						<li>vector3 - class for storing and manipulating 3D vectors. game.pos and game.rot use this.
 							<ul>
 								<li>
 									<p style="padding-left: 20px; padding-top: 10px;"><span class="keyword">vector3.prototype</span></p>
@@ -1459,23 +1476,42 @@
 								</li>
 							</ul>
 						</li>
-						<li><span class="keyword">printTable(t, [prefix])</span> - print an entire table, recursively. Useful for debugging.</li>
-						<li><span class="keyword">make(table, ...)</span> - useful for creating table tree structures.<br>
+
+						<li><span class="keyword">table.copy_shallow(t, copyMetatable)</span> - returns a copy of table t that is one level deep. Copied tables will reference the same underlying table. If copyMetatable ~= nil, the returned table will have the same metatable as t, as given by getmetatable(t).</li>
+
+						<li><span class="keyword">table.copy_recursive(t, copyMetatable)</span> - returns a recursive copy of table t. All table items in t and further down the "tree" will be actual copies by value instead of by reference. If copyMetatable ~= nil, all metatables will be copied (by value), as given by getmetatable(t).</li>
+
+						<li><span class="keyword">table.find(t, val)</span> - Returns the first key in t that has val as its value. If not found, returns nil.</li>
+
+						<li><span class="keyword">table.filter(t, filter)</span> - Returns a shallow copy of t which contains only key-value pairs that pass the filter. filter is a function: filter(k, v, t). If filter returns nil or false, the pair does not pass.</li>
+
+						<li><span class="keyword">table.make(table, ...)</span> - useful for creating table tree structures.<br>
 							<pre class="code">
 								t = {}
 								  ...
 								make(t, "a", "b").c = 5
-								<span class="comment">--t: {a = {b = {c = 5}}}</span>
+								<span class="comment">--t is now: {a = {b = {c = 5}}}</span>
 							</pre>
 							<br>
 							It will make sure that <span class="keyword">table.a.b</span> exists and return it, but won't overwrite anything that already exists.
 						</li>
-						<li><span class="keyword">starts_with(str, start)</span><br>
-						<li><span class="keyword">ends_with(str, ending)</span><br>
-						<li><span class="keyword">round(num, numDecimalPlaces)</span><br>
+
+						<li><span class="keyword">table.print(t, [prefix])</span> - print an entire table, recursively. Useful for debugging.</li>
+
+						<li><span class="keyword">table.merge(target, source, [recursive])</span> - Write key-value pairs from source into target, if target does not have key.</li>
+
+						<li><span class="keyword">string.starts_with(str, start)</span></li>
+						<li><span class="keyword">string.ends_with(str, ending)</span></li>
+
+						<li><span class="keyword">string.get_matches(str, pattern)</span> - Returns a table with all matches of pattern in str. Uses string.gmatch.</li>
+
+						<li><span class="keyword">round(num, numDecimalPlaces)</span></li>
 						<li>
 							<span class="keyword">getTime()</span> get time in milliseconds since program start, using <span class="keyword">std::chrono::steady_clock</span>
 						</li>
+
+						<li><span class="keyword">printf(format, ...)</span> - Works like C printf.</li>
+
 						<li><span class="keyword">_print(str)</span> - displays str in game (console on dedicated). Regular print() uses this.</li>
 						<li><span class="keyword">_log(str)</span> - adds str to rgl_log.txt</li>
 						<li>
@@ -1731,39 +1767,56 @@
 				<p>
 					The idea is to have a wrapper for game.addTrigger so we have more control (for example this is useful for hot reloading), and to have a single interface for all events - mission template, scene prop, and item triggers, as well as your own events.<br>
 					It returns a constant index to your trigger. game.addTrigger index will shift if you remove things below.<br>
-					Does only add to deathmatch, and no management of SP/MP triggers. It's up to you to modify to your needs.<br>
-					Needs header_triggers.py, ID_scenes.py, ID_items.py in msfiles.
+					Needs header_triggers.py, ID_scene_props.py, ID_items.py in msfiles.
 				</p>
 				<pre class="code code2">
 					<span class="comment">--[[
+					--[[
 					Usage:
 						event_mgr.subscribe(event_id, callback)
-						event_id:
-							"ti_constant", e.g. "ti_before_mission_start"
-							"timer_x.y", e.g. "timer_1.5" or "timer_0"
-							"itm_a:ti_constant", e.g. "itm_french_cav_pistol:ti_on_weapon_attack"
-							"spr_b:ti_constant", same thing
-							"script_", e.g. "script_game_quick_start" (versus hookScript - you can not control execution of modsys script here)
-							"key_", e.g.:
-							"key_o"                              O clicked
-							"key_o down=key_shift"               O clicked while Shift down
-							"key_k down=key_shift key_control"   key_shift, key_control means both left/right
-							"your_own_event_id", can be used with dispatch()
-					
-						returns: a subscription ID which you can use with unsubscribe
-					
-						event_mgr.unsubscribe(event_id, subscription_id)
-					
+					    event_mgr.subscribe(event_id, meta, callback)
+							event_id:
+								"ti_constant", e.g. "ti_before_mission_start"
+								"timer_x.y", e.g. "timer_1.5" or "timer_0"
+								"itm_a:ti_constant", e.g. "itm_french_cav_pistol:ti_on_weapon_attack"
+								"spr_b:ti_constant", same thing
+								"script_", e.g. "script_game_quick_start" (versus hookScript - you can not control execution of modsys script here)
+								"key_", e.g.:
+									"key_o"                              O clicked
+									"key_o down=key_shift"               O clicked while Shift down
+									"key_k down=key_shift key_control"   key_shift, key_control means both left/right
+								"your_own_event_id", can be used with dispatch()
+
+					        meta:
+					            Optional string, you can specify a list of mission templates and a network level this trigger will run in.
+					            Check ID_mission_templates for template IDs. If you don't specify any templates, it will run in any template.
+					            Optional network level:
+					                net_client: Game is singleplayer, hosting a game, or a client connected to a server. For code like presentations, keys, singleplayer things.
+					                net_server: You are hosting a game, or this is a dedicated server. For server code.
+					                net_dedi:   Game is a dedicated server.
+
+					            Examples:
+					                "mst_quick_battle_battle, mst_quick_battle_siege, net_client"
+					                "net_dedi"
+
+							returns: an ID which you can use with unsubscribe
+
+						event_mgr.unsubscribe(event_id, index)
+							will not shift other IDs
+
 						event_mgr.clear()
-						Clear all callbacks. Useful for hot-reloading
-						Example reload:
-						event_mgr.subscribe("key_r down=key_shift", function()
-							event_mgr.clear()
-							print("Reloading")
-							dofile("main.lua")
-						end)
-					
+							Clear all callbacks. This does not remove triggers added to the game, but unsubscribes all.
+							Useful for hot-reloading
+
+							Example reload:
+							event_mgr.subscribe("key_r down=key_shift", function()
+								event_mgr.clear()
+								print("Reloading")
+								dofile("main.lua")
+							end)
+
 						event_mgr.dispatch(event_id, ...)
+					        Will trigger an event
 					]]</span>
 
 					local regex = require "regex"
@@ -1774,40 +1827,17 @@
 						}
 					end
 
-					function event_mgr.subscribe(event_id, callback)
-						event_mgr.init_event(event_id)
-
-						local i = 1
-						while event_mgr.events[event_id][i] ~= nil do i = i + 1 end
-						event_mgr.events[event_id][i] = callback
-						return i
-					end
-
-					function event_mgr.unsubscribe(event_id, subscription_id)
-						event_mgr.events[event_id][subscription_id] = nil
-					end
-
-					function event_mgr.dispatch(event_id, ...)
-						if event_mgr.events[event_id] then
-							for _, event_callback in pairs(event_mgr.events[event_id]) do
-								event_callback(...)
-							end
-						end
-					end
-
-					function event_mgr.clear()
-						for event_id, _ in pairs(event_mgr.events) do
-							event_mgr.events[event_id] = {}
-						end
-					end
-
-					function event_mgr.init_event(event_id)
+					--The idea is that we register each kind of trigger only once to the engine.
+					--When the trigger master callback executes,
+					--it looks into event_mgr.events[event_id] for a list of callbacks.
+					--This function sets up that master callback.
+					local function init_event(event_id)
 						if event_mgr.events[event_id] then return end
-						make(event_mgr.events, event_id)
+						table.make(event_mgr.events, event_id)
 
 						local function add_mst_trig(const, callback)
-							for i = 0, game.getNumTemplates()-1 do
-								game.addTrigger(i, const, 0, 0, callback)
+							for i = 0, game.getNumTemplates() - 1 do
+					            game.addTrigger(i, const, 0, 0, callback)
 							end
 						end
 						
@@ -1817,31 +1847,31 @@
 							return false
 						end
 
-						if starts_with(event_id, "ti_") then
+						if string.starts_with(event_id, "ti_") then
 							local const = game.const.triggers[event_id]
 							add_mst_trig(const, cb)
 						
-						elseif starts_with(event_id, "timer_") then
+						elseif string.starts_with(event_id, "timer_") then
 							local const = tonumber(string.match(event_id, "%d+%.?%d*"))
 							add_mst_trig(const, cb)
 
-						elseif starts_with(event_id, "itm_") then
+						elseif string.starts_with(event_id, "itm_") then
 							local itm, const = string.match(event_id, "([%w_]+):([%w_]+)")
 							itm = game.const[itm]
 							const = game.const[const]
 							game.addItemTrigger(itm, const, cb)
 
-						elseif starts_with(event_id, "spr_") then
+						elseif string.starts_with(event_id, "spr_") then
 							local spr, const = string.match(event_id, "([%w_]+):([%w_]+)")
 							spr = game.const[spr]
 							const = game.const[const]
 							game.addScenePropTrigger(spr, const, cb)
 
-						elseif starts_with(event_id, "script_") then
+						elseif string.starts_with(event_id, "script_") then
 							local s = string.match(event_id, "script_([%w_]+)")
 							game.hookScript(game.script[s], function(...) event_mgr.dispatch(event_id, ...) end)
 
-						elseif starts_with(event_id, "key_") then
+						elseif string.starts_with(event_id, "key_") then
 							local keyname, modkeys = regex.match(event_id, [[(key_\w+)(?: down=(.+))?]])
 							local down = {}
 
@@ -1885,9 +1915,59 @@
 						end
 					end
 
-					--For calling from modsys
-					function eventDispatch(event_id, ...)
-						event_mgr.dispatch(event_id, ...)
+					--Input can be (event_id, callback) or (event_id, meta, callback)
+					function event_mgr.subscribe(...)
+						local event_id, meta, callback
+						local n = select("#", ...)
+						if n == 2 then
+							event_id, callback = unpack({...})
+						else
+							event_id, meta, callback = unpack({...})
+						end
+
+					    if meta then
+					        --We have a meta string like "mst_quick_battle_battle, net_client"
+					        --So wrap the callback in a function that does the checks
+
+					        local msts = string.get_matches(meta, "mst_[^, ]+")
+					        local net  = string.match(meta, "net_[^, ]+")
+					        local old_cb = callback
+
+					        callback = function()
+					            if #msts > 0 and not table.find(msts, game.getCurTemplateId()) then return end
+					            if net then
+					                if net == "net_client" and game.multiplayer_is_dedicated_server() then return end
+					                if net == "net_server" and not game.multiplayer_is_server() then return end
+					                if net == "net_dedi" and not game.multiplayer_is_dedicated_server() then return end
+					            end
+					            old_cb()
+					        end
+					    end
+
+					    init_event(event_id)
+
+						local i = 1
+						while event_mgr.events[event_id][i] ~= nil do i = i + 1 end
+						event_mgr.events[event_id][i] = callback
+						return i
+					end
+
+					function event_mgr.unsubscribe(event_id, index)
+						event_mgr.events[event_id][index] = nil
+					end
+
+					function event_mgr.dispatch(event_id, ...)
+						if event_mgr.events[event_id] then
+							for _, event_callback in pairs(event_mgr.events[event_id]) do
+								event_callback(...)
+							end
+						end
+					end
+
+					function event_mgr.clear()
+						for event_id, _ in pairs(event_mgr.events) do
+							event_mgr.events[event_id] = {}
+						end
 					end
 				</pre>
 			</div>
@@ -1911,7 +1991,7 @@
 						end
 					end
 					
-					function timeoutAddScript(time, script_no, ...)
+					function timeout.addScript(time, script_no, ...)
 						local args = {...}
 						local cb = function()
 							game.call_script(script_no, unpack(args))
@@ -1920,7 +2000,7 @@
 						table.insert(timeouts, { t = game.store_mission_timer_a_msec(0) + time, cb = cb})
 					end
 					
-					function timeoutAdd(time, callback)
+					function timeout.add(time, callback)
 						table.insert(timeouts, { t = game.store_mission_timer_a_msec(0) + time, cb = callback })
 					end
 					
@@ -1935,7 +2015,7 @@
 					(lua_push_int, ":var1"),
 					(lua_push_int, ":var2"),
 					
-					(lua_call, "@timeoutAddScript", 4),
+					(lua_call, "@timeout.addScript", 4),
 					(lua_set_top, 0), <span class="comment">#Just make sure its cleaned up</span>
 				</pre>
 			</div>
